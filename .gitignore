@@ -1,0 +1,13 @@
+# Python legacy version
+.venv/
+__pycache__/
+build/
+dist/
+*.spec
+
+# release files (rebuild from source)
+*.zip
+app/DesktopPet.exe
+
+# local workflow audit log
+.workflow/

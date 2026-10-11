@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the overlay and studio windows",
+  "windows": ["overlay", "studio"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-ignore-cursor-events",
+    "dialog:default",
+    "autostart:default"
+  ]
+}

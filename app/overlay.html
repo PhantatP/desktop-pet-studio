@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Desktop Pet</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: transparent;
+        overflow: hidden;
+        user-select: none;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        cursor: grab;
+      }
+      .bubble {
+        position: fixed;
+        transform: translate(-50%, calc(-100% - 10px)) scale(0.9);
+        transform-origin: 50% 100%;
+        padding: 7px 13px;
+        border-radius: 14px;
+        background: #fffaf3;
+        color: #4a3426;
+        border: 2px solid #f0b8a8;
+        font: 600 13px "Segoe UI Variable Text", "Segoe UI", sans-serif;
+        white-space: nowrap;
+        box-shadow: 0 4px 14px rgb(80 40 20 / 0.18);
+        pointer-events: none;
+        opacity: 0;
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+      }
+      .bubble::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: -7px;
+        width: 10px;
+        height: 10px;
+        background: #fffaf3;
+        border-right: 2px solid #f0b8a8;
+        border-bottom: 2px solid #f0b8a8;
+        transform: translateX(-50%) rotate(45deg);
+      }
+      .bubble.visible {
+        opacity: 1;
+        transform: translate(-50%, calc(-100% - 10px)) scale(1);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <script type="module" src="/src/overlay.ts"></script>
+  </body>
+</html>
