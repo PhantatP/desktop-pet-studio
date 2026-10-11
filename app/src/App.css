@@ -219,6 +219,11 @@ main {
 .page-head p {
   margin: 6px 0 0;
 }
+.head-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
 /* pet cards */
 .grid {

@@ -24,6 +24,18 @@ export function importSheet(petId: string, path: string): Promise<string> {
   return invoke<string>("import_sheet", { id: petId, path });
 }
 
+/** A .deskpet file holds one pet and its sheets, to send to someone else. */
+export const PET_FILE_FILTER = { name: "Desktop Pet", extensions: ["deskpet"] };
+
+export function exportPet(id: string, path: string): Promise<void> {
+  return invoke("export_pet", { id, path });
+}
+
+export async function importPetFile(path: string): Promise<void> {
+  await invoke<string>("import_pet", { path });
+  await emit("library-changed");
+}
+
 export function newPetId(): string {
   return `pet-${Date.now().toString(36)}`;
 }

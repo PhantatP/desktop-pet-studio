@@ -20,6 +20,7 @@ There are two versions in this repository:
   - a pet library with on/off switches
   - a pet editor for importing sprite sheets
   - settings for size, speed, climbing, and starting with Windows
+- **Sharing:** export any pet to a single `.deskpet` file and send it. The receiver adds it with **Import pet**.
 - **Tray icon:** opens the Studio or quits. Launching the app again opens the Studio instead of a second copy.
 
 ## Making a pet from a sprite sheet
@@ -41,6 +42,13 @@ Only **Standing** and **one walking direction** are required. Anything missing i
 | Climbing left / right wall | the other direction, mirrored; with neither, the pet doesn't climb |
 | Sitting, Happy / picked up | Standing |
 | Sleeping | Sitting, or else Standing |
+
+## Sharing a pet
+
+- **Send:** on the pet's card in the Studio, click **Export** and save the `.deskpet` file. It contains the pet's name, row setup and sprite sheets (built-in pets included), so it's usually a few MB.
+- **Receive:** click **Import pet** at the top of *My pets* and pick the file. The pet is added as a new pet and switched on. Importing the same file twice gives two separate pets.
+
+A `.deskpet` file is JSON: `{ "format": "desktop-pet", "version": 1, "pet": {…}, "files": { "sheet-1.png": "<base64>", … } }`.
 
 ## Building the app
 

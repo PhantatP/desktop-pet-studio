@@ -4,6 +4,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
+use serde_json::{Value, json};
 use tauri::ipc::Response;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -97,13 +99,85 @@ fn import_sheet(app: AppHandle, id: String, path: String) -> Result<String, Stri
         .extension()
         .map(|e| e.to_string_lossy().to_lowercase())
         .unwrap_or_else(|| "png".into());
-    let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_err(|e| e.to_string())?
-        .as_millis();
-    let name = format!("sheet-{stamp}.{}", safe_name(&ext)?);
+    let name = format!("sheet-{}.{}", stamp()?, safe_name(&ext)?);
     fs::copy(&path, dir.join(&name)).map_err(|e| e.to_string())?;
     Ok(name)
+}
+
+fn stamp() -> Result<u128, String> {
+    Ok(std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_millis())
+}
+
+/// Marks a .deskpet file: JSON holding the pet definition and its sheets, base64-encoded.
+const PET_FILE_FORMAT: &str = "desktop-pet";
+const NOT_A_PET_FILE: &str = "This isn't a Desktop Pet file, or it's damaged.";
+
+/// Save a pet and its sprite sheets as one file that can be sent to someone else.
+#[tauri::command]
+fn export_pet(app: AppHandle, id: String, path: String) -> Result<(), String> {
+    let dir = pets_dir(&app)?.join(safe_name(&id)?);
+    let json = fs::read_to_string(dir.join("pet.json")).map_err(|e| e.to_string())?;
+    let mut pet: Value = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    let mut files = serde_json::Map::new();
+    for (i, sheet) in pet["sheets"].as_array_mut().into_iter().flatten().enumerate() {
+        let file = sheet["file"].as_str().ok_or("a sheet has no file")?.to_string();
+        let bytes = if sheet["builtin"].as_bool() == Some(true) {
+            // built-in sheets are bundled inside the app, not in the pet's folder
+            app.asset_resolver()
+                .get(format!("builtin/{file}"))
+                .ok_or(format!("missing built-in sheet {file}"))?
+                .bytes
+        } else {
+            fs::read(dir.join(safe_name(&file)?)).map_err(|e| e.to_string())?
+        };
+        let ext = file.rsplit('.').next().unwrap_or("png");
+        let name = format!("sheet-{}.{}", i + 1, safe_name(ext)?);
+        files.insert(name.clone(), BASE64.encode(bytes).into());
+        sheet["file"] = name.into();
+        if let Some(sheet) = sheet.as_object_mut() {
+            sheet.remove("builtin");
+        }
+    }
+    if let Some(pet) = pet.as_object_mut() {
+        pet.remove("id");
+        pet.remove("enabled");
+    }
+    let bundle = json!({ "format": PET_FILE_FORMAT, "version": 1, "pet": pet, "files": files });
+    fs::write(path, bundle.to_string()).map_err(|e| e.to_string())
+}
+
+/// Add the pet in a .deskpet file to the library, switched on; returns its new id.
+#[tauri::command]
+fn import_pet(app: AppHandle, path: String) -> Result<String, String> {
+    let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let bundle: Value = serde_json::from_str(&text).map_err(|_| NOT_A_PET_FILE)?;
+    let mut pet = bundle["pet"].clone();
+    if bundle["format"] != PET_FILE_FORMAT || !pet["name"].is_string() || !pet["sheets"].is_array() {
+        return Err(NOT_A_PET_FILE.into());
+    }
+    let id = format!("pet-{}", stamp()?);
+    let dir = pets_dir(&app)?.join(&id);
+    let write_all = || -> Result<(), String> {
+        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        for sheet in pet["sheets"].as_array().into_iter().flatten() {
+            let file = safe_name(sheet["file"].as_str().ok_or(NOT_A_PET_FILE)?)?;
+            let data = bundle["files"][file].as_str().ok_or(NOT_A_PET_FILE)?;
+            let bytes = BASE64.decode(data).map_err(|_| NOT_A_PET_FILE)?;
+            fs::write(dir.join(file), bytes).map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    };
+    if let Err(e) = write_all() {
+        let _ = fs::remove_dir_all(&dir); // don't leave half a pet behind
+        return Err(e);
+    }
+    pet["id"] = id.clone().into();
+    pet["enabled"] = true.into();
+    fs::write(dir.join("pet.json"), pet.to_string()).map_err(|e| e.to_string())?;
+    Ok(id)
 }
 
 /// Raw bytes of an image the user picked in the file dialog.
@@ -181,6 +255,8 @@ pub fn run() {
             save_pet,
             delete_pet,
             import_sheet,
+            export_pet,
+            import_pet,
             read_file,
             read_pet_file,
             open_studio,

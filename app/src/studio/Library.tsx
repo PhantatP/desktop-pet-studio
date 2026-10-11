@@ -1,11 +1,21 @@
-import { ask } from "@tauri-apps/plugin-dialog";
+import { ask, message, open, save } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { buildAnimations, missingRequired, type Animations } from "../frames";
-import { deletePet, loadSheetImage, savePet } from "../library";
+import { PET_FILE_FILTER, deletePet, exportPet, importPetFile, loadSheetImage, savePet } from "../library";
 import type { PetDef } from "../types";
 import { AnimPreview } from "./AnimPreview";
 
 export function Library({ pets, onEdit, onNew }: { pets: PetDef[]; onEdit: (pet: PetDef) => void; onNew: () => void }) {
+  async function importFile() {
+    const path = await open({ filters: [PET_FILE_FILTER] });
+    if (!path) return;
+    try {
+      await importPetFile(path);
+    } catch (e) {
+      await message(String(e), { title: "Import pet", kind: "error" });
+    }
+  }
+
   return (
     <div className="page">
       <div className="page-head">
@@ -13,9 +23,14 @@ export function Library({ pets, onEdit, onNew }: { pets: PetDef[]; onEdit: (pet:
           <h1>My pets</h1>
           <p className="muted">Switch a pet on to let it roam your desktop. Click one there to say hi; right-click for its menu.</p>
         </div>
-        <button className="primary" onClick={onNew}>
-          + New pet
-        </button>
+        <div className="head-actions">
+          <button className="ghost" onClick={importFile} title="Add a pet someone sent you (.deskpet file)">
+            Import pet
+          </button>
+          <button className="primary" onClick={onNew}>
+            + New pet
+          </button>
+        </div>
       </div>
       <div className="grid">
         {pets.map((pet) => (
@@ -47,6 +62,21 @@ function PetCard({ pet, onEdit }: { pet: PetDef; onEdit: () => void }) {
 
   const broken = anims !== null && missingRequired(anims) !== null;
 
+  const [exported, setExported] = useState(false);
+
+  async function exportFile() {
+    const fileName = pet.name.replace(/[\\/:*?"<>|]/g, "").trim() || "pet"; // characters Windows forbids in file names
+    const path = await save({ defaultPath: `${fileName}.deskpet`, filters: [PET_FILE_FILTER] });
+    if (!path) return;
+    try {
+      await exportPet(pet.id, path);
+      setExported(true);
+      setTimeout(() => setExported(false), 2500);
+    } catch (e) {
+      await message(`Couldn't export ${pet.name}: ${e}`, { title: "Export pet", kind: "error" });
+    }
+  }
+
   async function remove() {
     if (await ask(`Delete ${pet.name}? This can't be undone.`, { title: "Delete pet", kind: "warning" })) {
       await deletePet(pet.id);
@@ -74,6 +104,9 @@ function PetCard({ pet, onEdit }: { pet: PetDef; onEdit: () => void }) {
       <div className="card-actions">
         <button className="ghost" onClick={onEdit}>
           Edit
+        </button>
+        <button className="ghost" onClick={exportFile} title="Save as a .deskpet file to send to someone">
+          {exported ? "Saved!" : "Export"}
         </button>
         <button className="ghost danger" onClick={remove}>
           Delete

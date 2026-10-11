@@ -364,8 +364,14 @@ async function reload() {
   const next: Actor[] = [];
   for (const pet of await listPets()) {
     if (!pet.enabled) continue;
-    const images = await Promise.all(pet.sheets.map((sheet) => loadSheetImage(pet, sheet)));
-    const anims = await buildAnimations(pet, images, settings.size, devicePixelRatio);
+    let anims: Animations;
+    try {
+      const images = await Promise.all(pet.sheets.map((sheet) => loadSheetImage(pet, sheet)));
+      anims = await buildAnimations(pet, images, settings.size, devicePixelRatio);
+    } catch (e) {
+      console.error(`skipping ${pet.name}:`, e); // e.g. a damaged imported pet; the others still load
+      continue;
+    }
     if (missingRequired(anims)) continue;
     const existing = actors.find((a) => a.pet.id === pet.id);
     if (existing) {
