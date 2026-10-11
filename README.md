@@ -44,6 +44,8 @@ Only **Standing** and **one walking direction** are required. Anything missing i
 
 ## Building the app
 
+> **The character sprites are not in this repository.** They are private and git-ignored. To build with the built-in Girl and Boy, put their sheets in `app/public/builtin/girl/` and `app/public/builtin/boy/` as `sprites.png`, `walk.png` and `climb.png` (layouts are defined in `BUILTINS` in [`app/src/library.ts`](app/src/library.ts)). Without them, change or empty `BUILTINS` and make pets in the Studio instead.
+
 Requirements (Windows 10/11):
 
 - [Node.js](https://nodejs.org/) 20+
@@ -106,4 +108,4 @@ python -m venv .venv
 .\.venv\Scripts\python build.py    # build dist/DesktopPet.exe (single file, ~55 MB)
 ```
 
-Characters and their sheet layouts are set in `CHARACTERS` at the top of [`pet.py`](pet.py), with sprites in [`assets/`](assets/). Settings are saved in the registry under `HKCU\Software\DesktopPet`.
+Characters and their sheet layouts are set in `CHARACTERS` at the top of [`pet.py`](pet.py). Their sprites go in `assets/girl/` and `assets/boy/`, which aren't in the repository (see above). Settings are saved in the registry under `HKCU\Software\DesktopPet`.

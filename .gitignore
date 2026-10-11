@@ -5,6 +5,10 @@ build/
 dist/
 *.spec
 
+# character sprites: AI-generated images of real people, kept private
+assets/
+app/public/builtin/
+
 # release files (rebuild from source)
 *.zip
 app/DesktopPet.exe
