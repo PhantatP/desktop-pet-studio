@@ -5,8 +5,11 @@ import process from "node:process";
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+
+  // the Store version bundles only the Cat (public-store/), never the private sprites in public/
+  publicDir: mode === "store" ? "public-store" : "public",
 
   // two pages: the Studio window and the transparent overlay the pets live in
   build: {

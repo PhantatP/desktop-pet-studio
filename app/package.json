@@ -7,11 +7,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:store-web": "tsc && vite build --mode store",
+    "build:store": "tauri build --no-bundle --config src-tauri/tauri.store.conf.json && copy /Y src-tauri\\target\\release\\desktop-pet.exe store\\ >nul",
+    "run:store": "winapp run store --output-appx-directory store-test --detach",
+    "pack:store": "npm run build:store && winapp package store --no-sign --output DesktopPet-store.msix"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-autostart": "^2.7.0",
     "@tauri-apps/plugin-dialog": "^2.8.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

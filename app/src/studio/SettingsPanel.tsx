@@ -1,4 +1,5 @@
-import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
+import { invoke } from "@tauri-apps/api/core";
+import { message } from "@tauri-apps/plugin-dialog";
 import { useEffect, useRef, useState } from "react";
 import { loadSettings, saveSettings, type Settings } from "../settings";
 
@@ -8,7 +9,7 @@ export function SettingsPanel() {
   const first = useRef(true);
 
   useEffect(() => {
-    void isEnabled().then(setAutostart);
+    void invoke<boolean>("get_autostart").then(setAutostart);
   }, []);
 
   // save shortly after the last change, so dragging a slider doesn't rebuild the pets on every step
@@ -24,8 +25,11 @@ export function SettingsPanel() {
   const set = (change: Partial<Settings>) => setSettings((s) => ({ ...s, ...change }));
 
   async function toggleAutostart() {
-    await (autostart ? disable() : enable());
-    setAutostart(await isEnabled());
+    try {
+      setAutostart(await invoke<boolean>("set_autostart", { enabled: !autostart }));
+    } catch (e) {
+      await message(String(e), { title: "Start with Windows", kind: "warning" });
+    }
   }
 
   return (

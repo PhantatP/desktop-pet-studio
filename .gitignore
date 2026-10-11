@@ -6,12 +6,15 @@ dist/
 *.spec
 
 # character sprites: AI-generated images of real people, kept private
-assets/
+/assets/
 app/public/builtin/
 
 # release files (rebuild from source)
 *.zip
+*.msix
 app/DesktopPet.exe
+app/store/desktop-pet.exe
+app/store-test/
 
 # local workflow audit log
 .workflow/

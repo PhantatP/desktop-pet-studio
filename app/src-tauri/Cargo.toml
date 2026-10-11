@@ -23,6 +23,7 @@ tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"
+windows = { version = "0.61", features = ["ApplicationModel", "Foundation", "Win32_System_WinRT"] }
 windows-sys = { version = "0.59", features = [
     "Win32_Foundation",
     "Win32_Graphics_Dwm",

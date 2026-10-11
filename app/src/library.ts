@@ -77,7 +77,23 @@ interface BuiltinSheet {
   rest?: Partial<Record<AnimName, number>>;
 }
 
-const BUILTINS: { id: string; name: string; enabled: boolean; sheets: BuiltinSheet[] }[] = [
+type Builtin = { id: string; name: string; enabled: boolean; sheets: BuiltinSheet[] };
+
+/** The Store version (`vite --mode store`) ships only the Cat, drawn by tools/make_cat_sheet.py. */
+const STORE_BUILTINS: Builtin[] = [
+  {
+    id: "builtin-cat",
+    name: "Cat",
+    enabled: true,
+    sheets: [
+      { file: "cat/sprites.png", frames: 6, rows: ["idle", "walk_right", "sit", "cheer", "sleep"] },
+      { file: "cat/climb.png", frames: 6, rows: ["climb_right"] },
+    ],
+  },
+];
+
+/** The private version's sheets aren't in the repository (see README). */
+const PRIVATE_BUILTINS: Builtin[] = [
   {
     id: "builtin-girl",
     name: "Girl",
@@ -99,6 +115,8 @@ const BUILTINS: { id: string; name: string; enabled: boolean; sheets: BuiltinShe
     ],
   },
 ];
+
+const BUILTINS = import.meta.env.MODE === "store" ? STORE_BUILTINS : PRIVATE_BUILTINS;
 
 /** On the very first run, add the built-in pets to the library. Returns true on that first run. */
 export async function ensureBuiltins(): Promise<boolean> {

@@ -9,8 +9,11 @@ use serde_json::{Value, json};
 use tauri::ipc::Response;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri_plugin_autostart::ManagerExt;
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 
+mod packaged;
 mod screen;
 
 #[derive(serde::Serialize)]
@@ -193,6 +196,43 @@ fn read_pet_file(app: AppHandle, id: String, file: String) -> Result<Response, S
     fs::read(path).map(Response::new).map_err(|e| e.to_string())
 }
 
+/// Import the .deskpet files the app was opened with (double-clicked, or dropped onto the .exe),
+/// then show the Studio with the new pets.
+fn open_pet_files(app: &AppHandle, args: &[String]) {
+    let files: Vec<&String> = args.iter().filter(|a| a.to_lowercase().ends_with(".deskpet")).collect();
+    if files.is_empty() {
+        return;
+    }
+    for path in files {
+        if let Err(e) = import_pet(app.clone(), path.clone()) {
+            app.dialog().message(e).title("Import pet").kind(MessageDialogKind::Error).show(|_| {});
+        }
+    }
+    let _ = app.emit("library-changed", ());
+    let _ = show_studio(app);
+}
+
+/// Is "Start with Windows" on? The Store version uses its startup task, the plain .exe the registry.
+#[tauri::command]
+async fn get_autostart(app: AppHandle) -> Result<bool, String> {
+    match packaged::startup_task() {
+        Some(task) => packaged::is_enabled(&task),
+        None => app.autolaunch().is_enabled().map_err(|e| e.to_string()),
+    }
+}
+
+/// Turn "Start with Windows" on or off; returns the resulting state.
+#[tauri::command]
+async fn set_autostart(app: AppHandle, enabled: bool) -> Result<bool, String> {
+    if let Some(task) = packaged::startup_task() {
+        return packaged::set_enabled(&task, enabled);
+    }
+    let autolaunch = app.autolaunch();
+    let result = if enabled { autolaunch.enable() } else { autolaunch.disable() };
+    result.map_err(|e| e.to_string())?;
+    autolaunch.is_enabled().map_err(|e| e.to_string())
+}
+
 // async: creating a window from a synchronous command can deadlock on Windows
 #[tauri::command]
 async fn open_studio(app: AppHandle) -> Result<(), String> {
@@ -243,8 +283,9 @@ fn create_overlay(app: &AppHandle) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        // launching a second copy just opens the Studio of the running one
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+        // launching a second copy opens the running one's Studio, importing any .deskpet it was given
+        .plugin(tauri_plugin_single_instance::init(|app, args, _| {
+            open_pet_files(app, &args);
             let _ = show_studio(app);
         }))
         .plugin(tauri_plugin_dialog::init())
@@ -257,6 +298,8 @@ pub fn run() {
             import_sheet,
             export_pet,
             import_pet,
+            get_autostart,
+            set_autostart,
             read_file,
             read_pet_file,
             open_studio,
@@ -264,6 +307,7 @@ pub fn run() {
         ])
         .setup(|app| {
             create_overlay(app.handle())?;
+            open_pet_files(app.handle(), &std::env::args().collect::<Vec<_>>());
             let open = MenuItem::with_id(app, "open", "Open Studio", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             TrayIconBuilder::new()

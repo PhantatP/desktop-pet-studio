@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap2="http://schemas.microsoft.com/appx/manifest/uap/windows10/2"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap2 uap3 uap10 desktop desktop6 rescap">
+
+  <Identity
+    Name="Yuriyaa.DesktopPetStudio"
+    Publisher="CN=092557E7-E6EC-43A8-8746-DDBEA2847FBB"
+    Version="1.0.0.0" />
+
+  <Properties>
+    <DisplayName>Desktop Pet Studio</DisplayName>
+    <PublisherDisplayName>Yuriyaa</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <uap10:PackageIntegrity>
+      <uap10:Content Enforcement="on"/>
+    </uap10:PackageIntegrity>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.26200.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="desktopPet"
+      Executable="desktop-pet.exe"
+      EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Desktop Pet Studio"
+        Description="Chibi pets that live on your desktop"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\MedTile.png"
+        Square44x44Logo="Assets\AppList.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\WideTile.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- double-clicking a .deskpet file opens the app with the file's path as its argument -->
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="deskpet">
+            <uap:DisplayName>Desktop Pet</uap:DisplayName>
+            <uap:Logo>Assets\StoreLogo.png</uap:Logo>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.deskpet</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+        <!-- "Start with Windows"; TaskId must match src-tauri/src/packaged.rs -->
+        <desktop:Extension Category="windows.startupTask" Executable="desktop-pet.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="DesktopPetStartup" Enabled="false" DisplayName="Desktop Pet" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
